@@ -11,6 +11,10 @@ terraform {
 provider "google" {
   project = "marketing-mine-v3-dev"
   region  = "us-central1"
+
+  # This line forces Terraform to act as our new service account,
+  # bypassing the broken local credentials.
+  impersonate_service_account = "terraform-admin@marketing-mine-v3-dev.iam.gserviceaccount.com"
 }
 
 # Create the GCS bucket for raw file uploads.
@@ -30,4 +34,19 @@ resource "google_storage_bucket" "uploads_bucket" {
   autoclass {
     enabled = true
   }
+}
+
+# Create the Vertex AI Search Datastore (using the correct resource name and all required arguments).
+# This will be the central index for all processed content.
+resource "google_discovery_engine_data_store" "content_datastore" {
+  location          = "global"
+  # This is the required, unique ID for the datastore.
+  data_store_id     = "marketing-mine-datastore"
+  display_name      = "marketing-mine-datastore"
+  industry_vertical = "GENERIC"
+  solution_types    = ["SOLUTION_TYPE_SEARCH"]
+  content_config    = "NO_CONTENT"
+  
+  # This is required, but we are not creating a site search engine.
+  create_advanced_site_search = false
 }
